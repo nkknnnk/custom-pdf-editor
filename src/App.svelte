@@ -216,6 +216,7 @@
         const result = await response.json();
         if (result.error === false) {
           pages=[]
+          window.location="http://localhost:3000/redirect-to-react-app"
         Swal.fire({
           title: "Success",
           text: result.message,
