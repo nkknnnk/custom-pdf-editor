@@ -1,6 +1,7 @@
 <script>
   import { onMount } from "svelte";
   import { fly } from "svelte/transition";
+  import Swal from "sweetalert2"
   import Tailwind from "./Tailwind.svelte";
   import PDFPage from "./PDFPage.svelte";
   import Image from "./Image.svelte";
@@ -30,7 +31,7 @@
   // for test purpose
   onMount(async () => {
     try {
-      const res = await fetch("/test.pdf");
+      const res = await fetch(`${window.location.href.split("?url=")[1]}`);
       const pdfBlob = await res.blob();
       await addPDF(pdfBlob);
       selectedPageIndex = 0;
@@ -182,13 +183,71 @@
     if (!pdfFile || saving || !pages.length) return;
     saving = true;
     try {
-      await save(pdfFile, allObjects, pdfName, pagesScale);
+      let pdf = await save(pdfFile, allObjects, pdfName, pagesScale);
+      
+      uploadFile(pdf)
     } catch (e) {
       console.log(e);
     } finally {
       saving = false;
     }
   }
+  console.log(location.href.split("data=")[1].split(",").map(elment=>elment.split(":")))
+  let reqdata = location.href.split("data=")[1].split(",").map(elment=>elment.split(":"))
+  const uploadFile = async (file) => {
+    const formData = new FormData();
+    formData.append('bank_id', reqdata[0][1]);
+    formData.append('comp_id', reqdata[1][1]);
+    formData.append('pdf_file', file);
+    formData.append('month', reqdata[2][1]);
+    formData.append('bank_format', reqdata[3][1]);
+    formData.append('fin_year', reqdata[4][1]);
+    
+    const url = `http://128.199.21.80:3004/bank/pdf`;
+
+    try {
+      if(pages.length>0){
+
+        const response = await fetch(url, {
+          method: 'POST',
+          body: formData,
+        });
+  
+        const result = await response.json();
+        if (result.error === false) {
+          pages=[]
+        Swal.fire({
+          title: "Success",
+          text: result.message,
+          icon: "success",
+          confirmButtonText: "Ok",
+        });
+      } else {
+        Swal.fire({
+          title: "Error",
+          text: result.message,
+          icon: "error",
+          confirmButtonText: "Ok",
+        });
+      }
+      }else{
+        Swal.fire({
+          title: "Warning",
+          text: "Please select pdf",
+          icon: "error",
+          confirmButtonText: "Ok",
+        });
+      }
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      Swal.fire({
+        title: "Error",
+        text: error.message,
+        icon: "error",
+        confirmButtonText: "Ok",
+      });
+    }
+  };
 </script>
 
 <svelte:window
@@ -209,6 +268,7 @@
     <input
       type="file"
       id="image"
+      accept=".pdf,"
       name="image"
       class="hidden"
       on:change={onUploadImage} />
@@ -261,13 +321,8 @@
       md:px-4 mr-3 md:mr-4 rounded"
       class:cursor-not-allowed={pages.length === 0 || saving || !pdfFile}
       class:bg-blue-700={pages.length === 0 || saving || !pdfFile}>
-      {saving ? 'Saving' : 'Save'}
+      {saving ? 'Uploading' : 'Upload'}
     </button>
-    <a href="https://github.com/ShizukuIchi/pdf-editor">
-      <img
-        src="/GitHub-Mark-32px.png"
-        alt="A GitHub icon leads to personal GitHub page" />
-    </a>
   </div>
   {#if addingDrawing}
     <div
