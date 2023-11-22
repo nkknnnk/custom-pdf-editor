@@ -28,6 +28,7 @@
   let selectedPageIndex = -1;
   let saving = false;
   let addingDrawing = false;
+  let isUploaded=false
   // for test purpose
   onMount(async () => {
     try {
@@ -185,15 +186,15 @@
     try {
       let pdf = await save(pdfFile, allObjects, pdfName, pagesScale);
       
-      uploadFile(pdf)
+      // uploadFile(pdf)
     } catch (e) {
       console.log(e);
     } finally {
       saving = false;
     }
   }
-  console.log(location.href.split("data=")[1].split(",").map(elment=>elment.split(":")))
-  let reqdata = location.href.split("data=")[1].split(",").map(elment=>elment.split(":"))
+  // console.log(location.href.split("data=")[1].split(",").map(elment=>elment.split(":")))
+  // let reqdata = location.href.split("data=")[1].split(",").map(elment=>elment.split(":"))
   const uploadFile = async (file) => {
     const formData = new FormData();
     formData.append('bank_id', reqdata[0][1]);
@@ -216,7 +217,8 @@
         const result = await response.json();
         if (result.error === false) {
           pages=[]
-          window.location="http://localhost:3000/redirect-to-react-app"
+          isUploaded=true
+          // window.location="http://localhost:3000/redirect-to-react-app"
         Swal.fire({
           title: "Success",
           text: result.message,
@@ -264,6 +266,7 @@
       type="file"
       name="pdf"
       id="pdf"
+      disabled={isUploaded}
       on:change={onUploadPDF}
       class="hidden" />
     <input
@@ -272,6 +275,7 @@
       accept=".pdf,"
       name="image"
       class="hidden"
+      disabled={isUploaded}
       on:change={onUploadImage} />
     <label
       class="whitespace-no-wrap bg-blue-500 hover:bg-blue-700 text-white
@@ -413,7 +417,7 @@
     </div>
   {:else}
     <div class="w-full flex-grow flex justify-center items-center">
-      <span class=" font-bold text-3xl text-gray-500">Drag something here</span>
+      <span class=" font-bold text-3xl text-gray-500">{isUploaded?"You have already uploaded pdf please close this popup":"Drag something here"}</span>
     </div>
   {/if}
 </main>
