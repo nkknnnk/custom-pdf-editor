@@ -326,7 +326,7 @@
       md:px-4 mr-3 md:mr-4 rounded"
       class:cursor-not-allowed={pages.length === 0 || saving || !pdfFile}
       class:bg-blue-700={pages.length === 0 || saving || !pdfFile}>
-      {saving ? 'Uploading' : 'Upload'}
+      {saving ? 'Saving' : 'Save'}
     </button>
   </div>
   {#if addingDrawing}
