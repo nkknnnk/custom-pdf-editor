@@ -186,15 +186,15 @@
     try {
       let pdf = await save(pdfFile, allObjects, pdfName, pagesScale);
       
-      // uploadFile(pdf)
+      uploadFile(pdf)
     } catch (e) {
       console.log(e);
     } finally {
       saving = false;
     }
   }
-  // console.log(location.href.split("data=")[1].split(",").map(elment=>elment.split(":")))
-  // let reqdata = location.href.split("data=")[1].split(",").map(elment=>elment.split(":"))
+  console.log(location.href.split("data=")[1].split(",").map(elment=>elment.split(":")))
+  let reqdata = location.href.split("data=")[1].split(",").map(elment=>elment.split(":"))
   const uploadFile = async (file) => {
     const formData = new FormData();
     formData.append('bank_id', reqdata[0][1]);
@@ -326,7 +326,7 @@
       md:px-4 mr-3 md:mr-4 rounded"
       class:cursor-not-allowed={pages.length === 0 || saving || !pdfFile}
       class:bg-blue-700={pages.length === 0 || saving || !pdfFile}>
-      {saving ? 'Saving' : 'Save'}
+      {saving ? 'Uploading' : 'Upload'}
     </button>
   </div>
   {#if addingDrawing}

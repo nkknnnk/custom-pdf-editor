@@ -8,7 +8,7 @@ export async function save(pdfFile, objects, name) {
   const makeTextPDF = await getAsset('makeTextPDF');
   let pdfDoc;
   try {
-    pdfDoc = await PDFLib.PDFDocument.load(await readAsArrayBuffer(pdfFile),{ ignoreEncryption: true });
+    pdfDoc = await PDFLib.PDFDocument.load(await readAsArrayBuffer(pdfFile));
   } catch (e) {
     console.log('Failed to load PDF.');
     throw e;
@@ -93,7 +93,7 @@ export async function save(pdfFile, objects, name) {
   await Promise.all(pagesProcesses);
   try {
     const pdfBytes = await pdfDoc.save();
-    download(pdfBytes, name, 'application/pdf');
+    // download(pdfBytes, name, 'application/pdf');
     var file = new File(
       [pdfBytes],
       "test-Certificate.pdf",
@@ -101,7 +101,7 @@ export async function save(pdfFile, objects, name) {
           type: "application/pdf;charset=utf-8",
       }
   );
-    // return file
+    return file
   } catch (e) {
     console.log('Failed to save PDF.');
     throw e;
