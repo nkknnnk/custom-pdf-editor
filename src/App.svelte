@@ -204,7 +204,7 @@
     formData.append('bank_format', reqdata[3][1]);
     formData.append('fin_year', reqdata[4][1]);
     
-    const url = `http://128.199.21.80:3004/bank/pdf`;
+    const url = `https://infiniticube.in/bank/pdf`;
 
     try {
       if(pages.length>0){
