@@ -1,7 +1,8 @@
 <script>
   import { onMount } from "svelte";
   import { fly } from "svelte/transition";
-  import Swal from "sweetalert2"
+  import Swal from "sweetalert2";
+  import { decrypt } from "node-qpdf2";
   import Tailwind from "./Tailwind.svelte";
   import PDFPage from "./PDFPage.svelte";
   import Image from "./Image.svelte";
@@ -13,7 +14,7 @@
     readAsArrayBuffer,
     readAsImage,
     readAsPDF,
-    readAsDataURL
+    readAsDataURL,
   } from "./utils/asyncReader.js";
   import { ggID } from "./utils/helper.js";
   import { save } from "./utils/PDF.js";
@@ -28,7 +29,7 @@
   let selectedPageIndex = -1;
   let saving = false;
   let addingDrawing = false;
-  let isUploaded=false
+  let isUploaded = false;
   // for test purpose
   onMount(async () => {
     try {
@@ -48,6 +49,15 @@
       console.log(e);
     }
   });
+  async function decryptPdf() {
+    const options = {
+      input: "/tmp/encrypted.pdf",
+      output: "/tmp/decrypted.pdf",
+      password: "YOUR_PASSWORD_TO_DECRYPT_PDF",
+    };
+
+    await decrypt(options);
+  }
   async function onUploadPDF(e) {
     const files = e.target.files || (e.dataTransfer && e.dataTransfer.files);
     const file = files[0];
@@ -98,7 +108,7 @@
         x: 0,
         y: 0,
         payload: img,
-        file
+        file,
       };
       allObjects = allObjects.map((objects, pIndex) =>
         pIndex === selectedPageIndex ? [...objects, object] : objects
@@ -124,7 +134,7 @@
       lineHeight: 1.4,
       fontFamily: currentFont,
       x: 0,
-      y: 0
+      y: 0,
     };
     allObjects = allObjects.map((objects, pIndex) =>
       pIndex === selectedPageIndex ? [...objects, object] : objects
@@ -146,7 +156,7 @@
       originWidth,
       originHeight,
       width: originWidth * scale,
-      scale
+      scale,
     };
     allObjects = allObjects.map((objects, pIndex) =>
       pIndex === selectedPageIndex ? [...objects, object] : objects
@@ -163,7 +173,7 @@
   function updateObject(objectId, payload) {
     allObjects = allObjects.map((objects, pIndex) =>
       pIndex == selectedPageIndex
-        ? objects.map(object =>
+        ? objects.map((object) =>
             object.id === objectId ? { ...object, ...payload } : object
           )
         : objects
@@ -172,7 +182,7 @@
   function deleteObject(objectId) {
     allObjects = allObjects.map((objects, pIndex) =>
       pIndex == selectedPageIndex
-        ? objects.filter(object => object.id !== objectId)
+        ? objects.filter((object) => object.id !== objectId)
         : objects
     );
   }
@@ -185,55 +195,63 @@
     saving = true;
     try {
       let pdf = await save(pdfFile, allObjects, pdfName, pagesScale);
-      
-      uploadFile(pdf)
+
+      uploadFile(pdf);
     } catch (e) {
       console.log(e);
-    } finally {
-      saving = false;
     }
   }
-  console.log(location.href.split("data=")[1].split(",").map(elment=>elment.split(":")))
-  let reqdata = location.href.split("data=")[1].split(",").map(elment=>elment.split(":"))
+  console.log(
+    location.href
+      .split("data=")[1]
+      .split(",")
+      .map((elment) => elment.split(":"))
+  );
+  let reqdata = location.href
+    .split("data=")[1]
+    .split(",")
+    .map((elment) => elment.split(":"));
   const uploadFile = async (file) => {
     const formData = new FormData();
-    formData.append('bank_id', reqdata[0][1]);
-    formData.append('comp_id', reqdata[1][1]);
-    formData.append('pdf_file', file);
-    formData.append('month', reqdata[2][1]);
-    formData.append('bank_format', reqdata[3][1]);
-    formData.append('fin_year', reqdata[4][1]);
-    
+    formData.append("bank_id", reqdata[0][1]);
+    formData.append("comp_id", reqdata[1][1]);
+    formData.append("pdf_file", file);
+    formData.append("month", reqdata[2][1]);
+    formData.append("bank_format", reqdata[3][1]);
+    formData.append("fin_year", reqdata[4][1]);
+
     const url = `https://infiniticube.in/bank/pdf`;
 
     try {
-      if(pages.length>0){
-
+      if (pages.length > 0) {
+        saving = true;
         const response = await fetch(url, {
-          method: 'POST',
+          method: "POST",
           body: formData,
         });
-  
+
         const result = await response.json();
         if (result.error === false) {
-          pages=[]
-          isUploaded=true
+          pages = [];
+          isUploaded = true;
+          saving = false;
           // window.location="http://localhost:3000/redirect-to-react-app"
-        Swal.fire({
-          title: "Success",
-          text: result.message,
-          icon: "success",
-          confirmButtonText: "Ok",
-        });
+          Swal.fire({
+            title: "Success",
+            text: result.message,
+            icon: "success",
+            confirmButtonText: "Ok",
+          });
+        } else {
+          saving = false;
+          Swal.fire({
+            title: "Error",
+            text: result.message,
+            icon: "error",
+            confirmButtonText: "Ok",
+          });
+        }
       } else {
-        Swal.fire({
-          title: "Error",
-          text: result.message,
-          icon: "error",
-          confirmButtonText: "Ok",
-        });
-      }
-      }else{
         Swal.fire({
           title: "Warning",
           text: "Please select pdf",
@@ -242,7 +260,7 @@
         });
       }
     } catch (error) {
-      console.error('Error uploading file:', error);
+      console.error("Error uploading file:", error);
       Swal.fire({
         title: "Error",
         text: error.message,
@@ -256,36 +274,43 @@
 <svelte:window
   on:dragenter|preventDefault
   on:dragover|preventDefault
-  on:drop|preventDefault={onUploadPDF} />
+  on:drop|preventDefault={onUploadPDF}
+/>
 <Tailwind />
 <main class="flex flex-col items-center py-16 bg-gray-100 min-h-screen">
   <div
     class="fixed z-10 top-0 left-0 right-0 h-12 flex justify-center items-center
-    bg-gray-200 border-b border-gray-300">
+    bg-gray-200 border-b border-gray-300"
+  >
     <input
       type="file"
       name="pdf"
       id="pdf"
-      disabled={isUploaded}
+      disabled={isUploaded || saving}
       on:change={onUploadPDF}
-      class="hidden" />
+      class="hidden"
+    />
     <input
       type="file"
       id="image"
       accept=".pdf,"
       name="image"
       class="hidden"
-      disabled={isUploaded}
-      on:change={onUploadImage} />
+      disabled={isUploaded || saving}
+      on:change={onUploadImage}
+    />
     <label
       class="whitespace-no-wrap bg-blue-500 hover:bg-blue-700 text-white
       font-bold py-1 px-3 md:px-4 rounded mr-3 cursor-pointer md:mr-4"
-      for="pdf">
+      for="pdf"
+      class:cursor-not-allowed={saving}
+    >
       Choose PDF
     </label>
     <div
       class="relative mr-3 flex h-8 bg-gray-400 rounded-sm overflow-hidden
-      md:mr-4">
+      md:mr-4"
+    >
       <!-- <label
         class="flex items-center justify-center h-full w-8 hover:bg-gray-500
         cursor-pointer"
@@ -300,7 +325,8 @@
         for="text"
         class:cursor-not-allowed={selectedPageIndex < 0}
         class:bg-gray-500={selectedPageIndex < 0}
-        on:click={onAddTextField}>
+        on:click={onAddTextField}
+      >
         <img src="/edit.svg" alt="An icon for adding text" />
       </label>
       <!-- <label
@@ -319,15 +345,17 @@
         type="text"
         disabled
         class="flex-grow bg-transparent"
-        bind:value={pdfName} />
+        bind:value={pdfName}
+      />
     </div>
     <button
       on:click={savePDF}
       class="w-20 bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-3
       md:px-4 mr-3 md:mr-4 rounded"
       class:cursor-not-allowed={pages.length === 0 || saving || !pdfFile}
-      class:bg-blue-700={pages.length === 0 || saving || !pdfFile}>
-      {saving ? 'Uploading' : 'Upload'}
+      class:bg-blue-700={pages.length === 0 || saving || !pdfFile}
+    >
+      {saving ? "Upload" : "Upload"}
     </button>
   </div>
   {#if addingDrawing}
@@ -335,9 +363,10 @@
       transition:fly={{ y: -200, duration: 500 }}
       class="fixed z-10 top-0 left-0 right-0 border-b border-gray-300 bg-white
       shadow-lg"
-      style="height: 50%;">
+      style="height: 50%;"
+    >
       <DrawingCanvas
-        on:finish={e => {
+        on:finish={(e) => {
           const { originWidth, originHeight, path } = e.detail;
           let scale = 1;
           if (originWidth > 500) {
@@ -346,7 +375,8 @@
           addDrawing(originWidth, originHeight, path, scale);
           addingDrawing = false;
         }}
-        on:cancel={() => (addingDrawing = false)} />
+        on:cancel={() => (addingDrawing = false)}
+      />
     </div>
   {/if}
   {#if pages.length}
@@ -356,27 +386,34 @@
         placeholder="Rename your PDF here"
         type="text"
         class="flex-grow bg-transparent"
-        bind:value={pdfName} />
+        bind:value={pdfName}
+      />
     </div>
     <div class="w-full">
       {#each pages as page, pIndex (page)}
         <div
           class="p-5 w-full flex flex-col items-center overflow-hidden"
           on:mousedown={() => selectPage(pIndex)}
-          on:touchstart={() => selectPage(pIndex)}>
+          on:touchstart={() => selectPage(pIndex)}
+        >
           <div
             class="relative shadow-lg"
-            class:shadow-outline={pIndex === selectedPageIndex}>
+            class:shadow-outline={pIndex === selectedPageIndex}
+          >
             <PDFPage
-              on:measure={e => onMeasure(e.detail.scale, pIndex)}
-              {page} />
+              on:measure={(e) => onMeasure(e.detail.scale, pIndex)}
+              {page}
+            />
             <div
               class="absolute top-0 left-0 transform origin-top-left"
-              style="transform: scale({pagesScale[pIndex]}); touch-action: none;">
+              style="transform: scale({pagesScale[
+                pIndex
+              ]}); touch-action: none;"
+            >
               {#each allObjects[pIndex] as object (object.id)}
-                {#if object.type === 'image'}
+                {#if object.type === "image"}
                   <Image
-                    on:update={e => updateObject(object.id, e.detail)}
+                    on:update={(e) => updateObject(object.id, e.detail)}
                     on:delete={() => deleteObject(object.id)}
                     file={object.file}
                     payload={object.payload}
@@ -384,10 +421,11 @@
                     y={object.y}
                     width={object.width}
                     height={object.height}
-                    pageScale={pagesScale[pIndex]} />
-                {:else if object.type === 'text'}
+                    pageScale={pagesScale[pIndex]}
+                  />
+                {:else if object.type === "text"}
                   <Text
-                    on:update={e => updateObject(object.id, e.detail)}
+                    on:update={(e) => updateObject(object.id, e.detail)}
                     on:delete={() => deleteObject(object.id)}
                     on:selectFont={selectFontFamily}
                     text={object.text}
@@ -396,10 +434,11 @@
                     size={object.size}
                     lineHeight={object.lineHeight}
                     fontFamily={object.fontFamily}
-                    pageScale={pagesScale[pIndex]} />
-                {:else if object.type === 'drawing'}
+                    pageScale={pagesScale[pIndex]}
+                  />
+                {:else if object.type === "drawing"}
                   <Drawing
-                    on:update={e => updateObject(object.id, e.detail)}
+                    on:update={(e) => updateObject(object.id, e.detail)}
                     on:delete={() => deleteObject(object.id)}
                     path={object.path}
                     x={object.x}
@@ -407,10 +446,10 @@
                     width={object.width}
                     originWidth={object.originWidth}
                     originHeight={object.originHeight}
-                    pageScale={pagesScale[pIndex]} />
+                    pageScale={pagesScale[pIndex]}
+                  />
                 {/if}
               {/each}
-
             </div>
           </div>
         </div>
@@ -418,7 +457,11 @@
     </div>
   {:else}
     <div class="w-full flex-grow flex justify-center items-center">
-      <span class=" font-bold text-3xl text-gray-500">{isUploaded?"You have already uploaded pdf please close this popup":"Drag something here"}</span>
+      <span class=" font-bold text-3xl text-gray-500"
+        >{isUploaded
+          ? "You have already uploaded pdf please close this popup"
+          : "Drag something here"}</span
+      >
     </div>
   {/if}
 </main>
