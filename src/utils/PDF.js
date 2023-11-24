@@ -8,7 +8,7 @@ export async function save(pdfFile, objects, name) {
   const makeTextPDF = await getAsset('makeTextPDF');
   let pdfDoc;
   try {
-    pdfDoc = await PDFLib.PDFDocument.load(await readAsArrayBuffer(pdfFile));
+    pdfDoc = await PDFLib.PDFDocument.load(await readAsArrayBuffer(pdfFile), {ignoreEncryption: true});
   } catch (e) {
     console.log('Failed to load PDF.');
     throw e;
