@@ -2,7 +2,6 @@
   import { onMount } from "svelte";
   import { fly } from "svelte/transition";
   import Swal from "sweetalert2";
-  import { decrypt } from "node-qpdf2";
   import Tailwind from "./Tailwind.svelte";
   import PDFPage from "./PDFPage.svelte";
   import Image from "./Image.svelte";
@@ -49,15 +48,6 @@
       console.log(e);
     }
   });
-  async function decryptPdf() {
-    const options = {
-      input: "/tmp/encrypted.pdf",
-      output: "/tmp/decrypted.pdf",
-      password: "YOUR_PASSWORD_TO_DECRYPT_PDF",
-    };
-
-    await decrypt(options);
-  }
   async function onUploadPDF(e) {
     const files = e.target.files || (e.dataTransfer && e.dataTransfer.files);
     const file = files[0];
