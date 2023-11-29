@@ -23,7 +23,7 @@
   let pages = [];
   let pagesScale = [];
   let allObjects = [];
-  let currentFont = "Courier";
+  let currentFont = "Times-Roman";
   let focusId = null;
   let selectedPageIndex = -1;
   let saving = false;
